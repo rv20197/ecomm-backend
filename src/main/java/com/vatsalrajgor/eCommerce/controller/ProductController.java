@@ -9,6 +9,7 @@ import com.vatsalrajgor.eCommerce.DTO.Product.ProductDTO;
 import com.vatsalrajgor.eCommerce.DTO.Product.ProductResponse;
 import com.vatsalrajgor.eCommerce.config.PaginationProperties;
 import com.vatsalrajgor.eCommerce.service.ProductService;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api")
@@ -79,5 +80,11 @@ public class ProductController {
     public ResponseEntity<ProductDTO> deleteProductById(@PathVariable Long productId){
         ProductDTO deletedProduct = productService.deleteProductById(productId);
         return new ResponseEntity<>(deletedProduct, HttpStatus.OK);
+    }
+
+    @PutMapping("/admin/products/{productId}/image")
+    public ResponseEntity<ProductDTO> updateProductImage(@PathVariable Long productId, @RequestParam("image") MultipartFile image){
+        ProductDTO updatedProductDTO = productService.updateProductImage(productId, image);
+        return new ResponseEntity<>(updatedProductDTO, HttpStatus.OK);
     }
 }

@@ -1,5 +1,6 @@
 package com.vatsalrajgor.eCommerce.service;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +21,7 @@ import com.vatsalrajgor.eCommerce.repository.CategoryRepo;
 import com.vatsalrajgor.eCommerce.repository.ProductRepo;
 
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class ProductService {
@@ -41,7 +43,7 @@ public class ProductService {
         productEntity.setCategory(category);
         double specialPrice = product.getPrice() - ((productEntity.getDiscount() / 100) * product.getPrice());
         productEntity.setSpecialPrice(specialPrice);
-        productEntity.setImage("default.png");
+        productEntity.setImageName("default.png");
         Product savedProduct = productRepo.save(productEntity);
         return productMapper.toDTO(savedProduct);
     }
@@ -118,6 +120,8 @@ public class ProductService {
         existingProduct.setQuantity(productEntity.getQuantity());
         existingProduct.setDiscount(productEntity.getDiscount());
         existingProduct.setPrice(productEntity.getPrice());
+        existingProduct.setImageName(productEntity.getImageName());
+        existingProduct.setImage(productEntity.getImage());
 
         double specialPrice = productEntity.getPrice() - ((productEntity.getDiscount() / 100) * productEntity.getPrice());
         existingProduct.setSpecialPrice(specialPrice);
@@ -131,5 +135,20 @@ public class ProductService {
         Product deletedProduct = productRepo.findById(productId).orElseThrow(() -> new ResourceNotFoundException("Product", "productId", productId));
         productRepo.deleteById(productId);
         return productMapper.toDTO(deletedProduct);
+    }
+
+    public ProductDTO updateProductImage(Long productId, MultipartFile image) {
+        Product product = productRepo.findById(productId).orElseThrow(() -> new ResourceNotFoundException("Product", "productId", productId));
+        if (image == null || image.isEmpty()) {
+            throw new IllegalArgumentException("Image cannot be null or empty");
+        }
+        try {
+            product.setImage(image.getBytes());
+            product.setImageName(image.getOriginalFilename());
+        } catch (IOException e) {
+            throw new APIException("Failed to upload image: " + e.getMessage());
+        }
+        Product updatedProduct = productRepo.save(product);
+        return productMapper.toDTO(updatedProduct);
     }
 }

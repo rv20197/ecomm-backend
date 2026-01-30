@@ -15,7 +15,11 @@ public class Product {
     private Long productId;
     private String productName;
     private String description;
-    private String image;
+    private String imageName;
+
+    @Lob
+    @Column(columnDefinition = "LONGBLOB")
+    private byte[] image;
     private Integer quantity;
     private double price;
     private double discount;
