@@ -36,9 +36,13 @@ public class CategoryService{
             throw new APIException("No categories found!");
         }
         List<CategoryDTO> categoryDTOs = categories.stream().map(categoryMapper::toDTO).toList();
+        return getCategoryResponse(categoryPage, categoryDTOs);
+    }
+
+    private CategoryResponse getCategoryResponse(Page<Category> categoryPage, List<CategoryDTO> categoryDTOs) {
         CategoryResponse categoryResponse = new CategoryResponse();
         categoryResponse.setContent(categoryDTOs);
-        categoryResponse.setPageNumber(categoryPage.getNumber()+1);
+        categoryResponse.setPageNumber(categoryPage.getNumber() + 1);
         categoryResponse.setPageSize(categoryPage.getSize());
         categoryResponse.setTotalElements(categoryPage.getTotalElements());
         categoryResponse.setTotalPages(categoryPage.getTotalPages());

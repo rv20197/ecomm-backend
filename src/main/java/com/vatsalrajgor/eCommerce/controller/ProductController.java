@@ -1,5 +1,6 @@
 package com.vatsalrajgor.eCommerce.controller;
 
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -26,7 +27,7 @@ public class ProductController {
     }
 
     @PostMapping("/admin/categories/{categoryId}/product")
-    public ResponseEntity<ProductDTO> addProduct(@RequestBody ProductDTO product, @PathVariable Long categoryId){
+    public ResponseEntity<ProductDTO> addProduct(@Valid @RequestBody ProductDTO product, @PathVariable Long categoryId){
         ProductDTO productDTO = productService.addProduct(product, categoryId);
         return new ResponseEntity<>(productDTO, HttpStatus.CREATED);
     }
@@ -72,7 +73,7 @@ public class ProductController {
     }
 
     @PutMapping("/admin/products/{productId}")
-    public ResponseEntity<ProductDTO> updateProductById(@PathVariable Long productId, @RequestBody ProductDTO product){
+    public ResponseEntity<ProductDTO> updateProductById(@PathVariable Long productId, @Valid @RequestBody ProductDTO product){
         ProductDTO updatedProductDTO = productService.updateProduct(productId, product);
         return new ResponseEntity<>(updatedProductDTO, HttpStatus.OK);
     }

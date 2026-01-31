@@ -10,6 +10,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.vatsalrajgor.eCommerce.DTO.Product.ProductDTO;
 import com.vatsalrajgor.eCommerce.DTO.Product.ProductResponse;
@@ -42,9 +43,19 @@ public class ProductService {
         this.productMapper = productMapper;
         this.fileService = fileService;
     }
-
+    
+    @Transactional
     public ProductDTO addProduct(ProductDTO product, Long categoryId) {
-        Category category = this.categoryRepo.findById(categoryId).orElseThrow(() -> new ResourceNotFoundException("Category", "categoryId", categoryId));
+        Category category = this.categoryRepo.findWithProductsByCategoryId(categoryId)
+                .orElseThrow(() -> new ResourceNotFoundException("Category", "categoryId", categoryId));
+
+        boolean isProductPresent = category.getProducts().stream()
+                .anyMatch(p -> p.getProductName().equalsIgnoreCase(product.getProductName()));
+
+        if (isProductPresent) {
+            throw new APIException("Product with name " + product.getProductName() + " already exists!");
+        }
+
         Product productEntity =  productMapper.toEntity(product);
         productEntity.setCategory(category);
         double specialPrice = product.getPrice() - ((productEntity.getDiscount() / 100) * product.getPrice());
@@ -64,6 +75,10 @@ public class ProductService {
             throw new APIException("No products found!");
         }
         List<ProductDTO> productDTOS = allProducts.stream().map(productMapper::toDTO).toList();
+        return getProductResponse(productPage, productDTOS);
+    }
+
+    private ProductResponse getProductResponse(Page<Product> productPage, List<ProductDTO> productDTOS) {
         ProductResponse productResponse = new ProductResponse();
         productResponse.setContent(productDTOS);
         productResponse.setPageNumber(productPage.getNumber() + 1);
@@ -88,14 +103,7 @@ public class ProductService {
         }
 
         List<ProductDTO> productDTOS = productsInCategory.getContent().stream().map(productMapper::toDTO).toList();
-        ProductResponse productResponse = new ProductResponse();
-        productResponse.setContent(productDTOS);
-        productResponse.setPageNumber(productsInCategory.getNumber() + 1);
-        productResponse.setTotalElements(productsInCategory.getTotalElements());
-        productResponse.setTotalPages(productsInCategory.getTotalPages());
-        productResponse.setLastPage(productsInCategory.isLast());
-        productResponse.setPageSize(productsInCategory.getSize());
-        return productResponse;
+        return getProductResponse(productsInCategory, productDTOS);
     }
 
     public ProductResponse searchProductByKeyword(String keyword, Integer pageNumber, Integer pageSize, String sortBy, String sortOrder) {
@@ -108,14 +116,7 @@ public class ProductService {
         }
 
         List<ProductDTO> productDTOS = products.getContent().stream().map(productMapper::toDTO).toList();
-        ProductResponse productResponse = new ProductResponse();
-        productResponse.setContent(productDTOS);
-        productResponse.setPageNumber(products.getNumber() + 1);
-        productResponse.setTotalElements(products.getTotalElements());
-        productResponse.setTotalPages(products.getTotalPages());
-        productResponse.setLastPage(products.isLast());
-        productResponse.setPageSize(products.getSize());
-        return productResponse;
+        return getProductResponse(products, productDTOS);
     }
 
     public ProductDTO updateProduct(Long productId, ProductDTO product) {
