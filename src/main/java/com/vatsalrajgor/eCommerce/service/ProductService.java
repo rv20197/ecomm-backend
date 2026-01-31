@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -29,12 +30,17 @@ public class ProductService {
     private final CategoryRepo categoryRepo;
     private final ProductRepo productRepo;
     private final ProductMapper productMapper;
+    private final FileService fileService;
+
+    @Value("${project.image}")
+    private String path;
 
     @Autowired
-    public ProductService(CategoryRepo categoryRepo, ProductRepo productRepo, ProductMapper productMapper) {
+    public ProductService(CategoryRepo categoryRepo, ProductRepo productRepo, ProductMapper productMapper, FileService fileService) {
         this.categoryRepo = categoryRepo;
         this.productRepo = productRepo;
         this.productMapper = productMapper;
+        this.fileService = fileService;
     }
 
     public ProductDTO addProduct(ProductDTO product, Long categoryId) {
@@ -121,7 +127,6 @@ public class ProductService {
         existingProduct.setDiscount(productEntity.getDiscount());
         existingProduct.setPrice(productEntity.getPrice());
         existingProduct.setImageName(productEntity.getImageName());
-        existingProduct.setImage(productEntity.getImage());
 
         double specialPrice = productEntity.getPrice() - ((productEntity.getDiscount() / 100) * productEntity.getPrice());
         existingProduct.setSpecialPrice(specialPrice);
@@ -137,14 +142,14 @@ public class ProductService {
         return productMapper.toDTO(deletedProduct);
     }
 
-    public ProductDTO updateProductImage(Long productId, MultipartFile image) {
+    public ProductDTO uploadProductImage(Long productId, MultipartFile image) {
         Product product = productRepo.findById(productId).orElseThrow(() -> new ResourceNotFoundException("Product", "productId", productId));
         if (image == null || image.isEmpty()) {
             throw new IllegalArgumentException("Image cannot be null or empty");
         }
         try {
-            product.setImage(image.getBytes());
-            product.setImageName(image.getOriginalFilename());
+            String fileName = fileService.uploadImage(path, image);
+            product.setImageName(fileName);
         } catch (IOException e) {
             throw new APIException("Failed to upload image: " + e.getMessage());
         }

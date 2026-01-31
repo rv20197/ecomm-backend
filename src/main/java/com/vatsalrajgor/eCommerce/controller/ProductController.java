@@ -2,6 +2,7 @@ package com.vatsalrajgor.eCommerce.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -82,9 +83,9 @@ public class ProductController {
         return new ResponseEntity<>(deletedProduct, HttpStatus.OK);
     }
 
-    @PutMapping("/admin/products/{productId}/image")
-    public ResponseEntity<ProductDTO> updateProductImage(@PathVariable Long productId, @RequestParam("image") MultipartFile image){
-        ProductDTO updatedProductDTO = productService.updateProductImage(productId, image);
+    @PutMapping(value ="/admin/products/{productId}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ProductDTO> updateProductImage(@PathVariable Long productId, @RequestPart("image") MultipartFile image){
+        ProductDTO updatedProductDTO = productService.uploadProductImage(productId, image);
         return new ResponseEntity<>(updatedProductDTO, HttpStatus.OK);
     }
 }
