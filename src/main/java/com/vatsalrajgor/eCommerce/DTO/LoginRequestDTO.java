@@ -1,11 +1,11 @@
-package com.vatsalrajgor.eCommerce.security.utils;
+package com.vatsalrajgor.eCommerce.DTO;
 
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
-public class LoginRequest {
+public class LoginRequestDTO {
     private String username;
     private String password;
 }
