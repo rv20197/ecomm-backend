@@ -23,25 +23,24 @@ public class User {
     private Long userId;
 
     @NotBlank
-    @Size(max = 10, message = "User Name can be of at most of 10 characters.")
-    @Size(min = 4, message = "User Name must be at least of 4 characters.")
+    @Size(max = 20, message = "User Name can be of at most of 20 characters.")
+    @Size(min = 3, message = "User Name must be at least of 3 characters.")
     @Column(unique = true)
     @SafeHtml
     private String userName;
 
     @NotBlank
     @Size(min = 6, message = "Password must be at least of 6 characters.")
-    @Size(max = 15, message = "Password can be of at most of 15 characters.")
     private String password;
 
     @NotBlank
-    @Size(max = 50, message = "First Name can be of at most of 50 characters.")
+    @Size(max = 20, message = "First Name can be of at most of 20 characters.")
     @Size(min = 2, message = "First Name must be at least of 2 characters.")
     @SafeHtml
     private String firstName;
 
     @NotBlank
-    @Size(max = 50, message = "Last Name can be of at most of 50 characters.")
+    @Size(max = 20, message = "Last Name can be of at most of 20 characters.")
     @Size(min = 2, message = "Last Name must be at least of 2 characters.")
     @SafeHtml
     private String lastName;
@@ -60,12 +59,10 @@ public class User {
     private String phoneNumber;
 
     @Column(nullable = false)
-    @SafeHtml
     private boolean enabled = true;
 
-    @ManyToMany(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @ManyToMany(fetch = FetchType.EAGER, cascade = {CascadeType.MERGE})
     @JoinTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
-    @SafeHtml
     private Set<Role> roles = new HashSet<>();
 
     @OneToMany(mappedBy = "user", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY, orphanRemoval = true)

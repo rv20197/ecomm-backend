@@ -60,6 +60,8 @@ public class SecurityConfiguration {
                 .requestMatchers("/v3/api-docs/**").permitAll()
                 .requestMatchers("/swagger-ui/**").permitAll()
                 .requestMatchers("/api/public/**").permitAll()
+                .requestMatchers("/images/**").permitAll()
+                .requestMatchers("/api/test/**").permitAll()
                 .anyRequest().authenticated());
         httpSecurity.authenticationProvider(authenticationProvider());
         httpSecurity.addFilterBefore(authJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
@@ -68,7 +70,8 @@ public class SecurityConfiguration {
 
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer(){
-        return (web) -> web.ignoring().requestMatchers("/v2/api-docs/**",
+        return (web) -> web.ignoring().requestMatchers(
+                "/v2/api-docs/**",
                 "/configuration/ui",
                 "/swagger-resources/**",
                 "/configuration/security",
