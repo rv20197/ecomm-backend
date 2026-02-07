@@ -24,9 +24,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.function.ServerRequest;
 
 import java.util.*;
 
@@ -131,11 +129,23 @@ public class AuthController {
     }
 
     @GetMapping("/getCurrentUserName")
-    public String currentUserName(Authentication authentication){
+    public ResponseEntity<?> currentUserName(Authentication authentication){
         if(authentication!=null){
-            return authentication.getName();
+            return new ResponseEntity<>(authentication.getName(), HttpStatus.OK);
         }else{
-            return null;
+            return new ResponseEntity<Object>("User is not authenticated!", HttpStatus.UNAUTHORIZED);
+        }
+    }
+
+    @GetMapping("/getCurrentUserDetails")
+    public ResponseEntity<?> getCurrentUserDetails(Authentication authentication){
+        if(authentication!=null){
+            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+            List<String> roles = userDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList();
+            UserInfoResponse userInfoResponse = new UserInfoResponse(userDetails.getUserId(), userDetails.getUsername(),roles);
+            return new ResponseEntity<Object>(userInfoResponse, HttpStatus.OK);
+        }else{
+            return new ResponseEntity<Object>("User is not authenticated!", HttpStatus.UNAUTHORIZED);
         }
     }
 }
