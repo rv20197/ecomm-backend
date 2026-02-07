@@ -13,7 +13,9 @@ import com.vatsalrajgor.eCommerce.security.services.UserDetailsImpl;
 import com.vatsalrajgor.eCommerce.security.utils.JwtUtils;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -22,10 +24,12 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.function.ServerRequest;
 
 import java.util.*;
 
@@ -50,10 +54,12 @@ public class AuthController {
             SecurityContextHolder.getContext().setAuthentication(authentication);
             UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
             assert userDetails != null;
-            String jwtToken = jwtUtils.generateJwtTokenFromUsername(userDetails);
+            ResponseCookie jwtCookie = jwtUtils.generateJwtCookie(userDetails);
             List<String> roles = userDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList();
-            UserInfoResponse userInfoResponse = new UserInfoResponse(userDetails.getUserId(), userDetails.getUsername(),roles,jwtToken);
-            return new ResponseEntity<Object>(userInfoResponse, HttpStatus.OK);
+            UserInfoResponse userInfoResponse = new UserInfoResponse(userDetails.getUserId(), userDetails.getUsername(),roles);
+            HttpHeaders headers = new HttpHeaders();
+            headers.add(HttpHeaders.SET_COOKIE, jwtCookie.toString());
+            return new ResponseEntity<Object>(userInfoResponse, headers, HttpStatus.OK);
         } catch (AuthenticationException e){
             Map<String,Object> map = new HashMap<>();
             map.put("message",e.getMessage());

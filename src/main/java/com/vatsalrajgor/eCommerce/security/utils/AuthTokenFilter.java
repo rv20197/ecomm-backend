@@ -27,7 +27,7 @@ public class AuthTokenFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
         log.debug("Auth token filter invoked for URI: {}", request.getRequestURI());
         try{
-            String jwt = jwtUtils.getJwtFromRequest(request);
+            String jwt = jwtUtils.getJwtFromCookie(request);
             log.debug("JWT token: {}", jwt);
             if(jwt != null && jwtUtils.validateJwtToken(jwt)){
                 String username = jwtUtils.getUserNameFromJwtToken(jwt);

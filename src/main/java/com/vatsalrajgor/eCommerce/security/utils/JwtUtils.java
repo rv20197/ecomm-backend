@@ -1,16 +1,21 @@
 package com.vatsalrajgor.eCommerce.security.utils;
 
+import com.vatsalrajgor.eCommerce.security.services.UserDetailsImpl;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
+import org.springframework.web.util.WebUtils;
 
 import javax.crypto.SecretKey;
 import java.security.Key;
@@ -25,26 +30,47 @@ public class JwtUtils {
     private int jwtExpirationInMs;
     @Value("${jwt.secret}")
     private String jwtSecret;
+    @Value("${jwt.cookie.name}")
+    private String jwtCookie;
 
     public Key key(){
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
     }
 
-    public String getJwtFromRequest(HttpServletRequest request){
-        String bearerToken = request.getHeader("Authorization");
-        log.debug("Bearer token: {}",bearerToken);
-        if(bearerToken != null && bearerToken.startsWith("Bearer ")){
-            return bearerToken.substring(7);
+//    public String getJwtFromRequest(HttpServletRequest request){
+//        String bearerToken = request.getHeader("Authorization");
+//        log.debug("Bearer token: {}",bearerToken);
+//        if(bearerToken != null && bearerToken.startsWith("Bearer ")){
+//            return bearerToken.substring(7);
+//        }
+//        return null;
+//    }
+
+
+    public String getJwtFromCookie(HttpServletRequest request) {
+        Cookie cookie = WebUtils.getCookie(request, jwtCookie);
+        if (cookie != null) {
+            return cookie.getValue();
+        }else {
+            return null;
         }
-        return null;
     }
 
-    public String generateJwtTokenFromUsername(UserDetails userDetails){
+    private String generateJwtTokenFromUsername(@NonNull UserDetails userDetails){
         String username = userDetails.getUsername();
         Date expirationInMs = new Date(new Date().getTime() + jwtExpirationInMs);
         Map<String, Object> assignedRole = new HashMap<>();
         assignedRole.put("role", userDetails.getAuthorities());
         return Jwts.builder().subject(username).claims(assignedRole).issuedAt(new Date()).expiration(expirationInMs).signWith(key()).compact();
+    }
+
+    public ResponseCookie generateJwtCookie(UserDetailsImpl userDetails) {
+        String jwt = generateJwtTokenFromUsername(userDetails);
+        return ResponseCookie.from(jwtCookie, jwt)
+                .path("/api")
+                .maxAge(jwtExpirationInMs)
+                .httpOnly(false)
+                .build();
     }
 
     public String getUserNameFromJwtToken(String token){

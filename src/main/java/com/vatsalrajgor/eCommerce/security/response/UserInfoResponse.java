@@ -13,5 +13,4 @@ public class UserInfoResponse {
     private Long userId;
     private String userName;
     private List<String> roles;
-    private String token;
 }
