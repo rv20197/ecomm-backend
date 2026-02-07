@@ -60,10 +60,12 @@ public class User {
     private String phoneNumber;
 
     @Column(nullable = false)
+    @SafeHtml
     private boolean enabled = true;
 
     @ManyToMany(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
+    @SafeHtml
     private Set<Role> roles = new HashSet<>();
 
     @OneToMany(mappedBy = "user", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY, orphanRemoval = true)

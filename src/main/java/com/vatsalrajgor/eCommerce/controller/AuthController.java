@@ -1,9 +1,17 @@
 package com.vatsalrajgor.eCommerce.controller;
 
-import com.vatsalrajgor.eCommerce.security.request.LoginRequestDTO;
-import com.vatsalrajgor.eCommerce.security.response.UserInfoResponseDTO;
+import com.vatsalrajgor.eCommerce.model.AppRole;
+import com.vatsalrajgor.eCommerce.model.Role;
+import com.vatsalrajgor.eCommerce.model.User;
+import com.vatsalrajgor.eCommerce.repository.RoleRepository;
+import com.vatsalrajgor.eCommerce.repository.UserRepository;
+import com.vatsalrajgor.eCommerce.security.request.LoginRequest;
+import com.vatsalrajgor.eCommerce.security.request.SignUpRequest;
+import com.vatsalrajgor.eCommerce.security.response.MessageResponse;
+import com.vatsalrajgor.eCommerce.security.response.UserInfoResponse;
 import com.vatsalrajgor.eCommerce.security.services.UserDetailsImpl;
 import com.vatsalrajgor.eCommerce.security.utils.JwtUtils;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,14 +21,13 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RestController
 @AllArgsConstructor
@@ -29,9 +36,12 @@ public class AuthController {
 
     private final JwtUtils jwtUtils;
     private final AuthenticationManager authenticationManager;
+    private final PasswordEncoder passwordEncoder;
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
 
     @PostMapping("/sign-in")
-    public ResponseEntity<?> signInUser(@RequestBody LoginRequestDTO loginRequest){
+    public ResponseEntity<?> signInUser(@RequestBody LoginRequest loginRequest){
         Authentication authentication;
         try{
             authentication = this.authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
@@ -42,7 +52,7 @@ public class AuthController {
             assert userDetails != null;
             String jwtToken = jwtUtils.generateJwtTokenFromUsername(userDetails);
             List<String> roles = userDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList();
-            UserInfoResponseDTO userInfoResponse = new UserInfoResponseDTO(userDetails.getUserId(), userDetails.getUsername(),roles,jwtToken);
+            UserInfoResponse userInfoResponse = new UserInfoResponse(userDetails.getUserId(), userDetails.getUsername(),roles,jwtToken);
             return new ResponseEntity<Object>(userInfoResponse, HttpStatus.OK);
         } catch (AuthenticationException e){
             Map<String,Object> map = new HashMap<>();
@@ -51,5 +61,69 @@ public class AuthController {
             map.put("status",false);
             return new ResponseEntity<Object>(map, HttpStatus.UNAUTHORIZED);
         }
+    }
+
+    @PostMapping("/sign-up")
+    public ResponseEntity<?> signUpUser(@Valid @RequestBody SignUpRequest signUpRequest){
+        if(userRepository.existsByUserName(signUpRequest.getUsername())){
+            return new ResponseEntity<Object>(new MessageResponse("Username already exists!"), HttpStatus.BAD_REQUEST);
+        }
+
+        if (userRepository.existsByEmail(signUpRequest.getEmail())){
+            return new ResponseEntity<Object>(new MessageResponse("Email already exists!"), HttpStatus.BAD_REQUEST);
+        }
+
+        if(!signUpRequest.getPassword().equals(signUpRequest.getConfirmPassword())){
+            return new ResponseEntity<Object>(new MessageResponse("Passwords do not match!"), HttpStatus.BAD_REQUEST);
+        }
+
+        String encodedPassword = passwordEncoder.encode(signUpRequest.getPassword());
+
+        Set<String> strRoles = signUpRequest.getRole();
+        Set<Role> roles = new HashSet<>();
+
+        if(strRoles==null){
+            Role userRole = roleRepository.findByRoleName(AppRole.ROLE_USER).orElseThrow(()->new RuntimeException("Role is not found!"));
+            roles.add(userRole);
+        } else {
+            strRoles.forEach(role->{
+                switch (role.toLowerCase()){
+                    case "admin":
+                        Role adminRole = roleRepository.findByRoleName(AppRole.ROLE_ADMIN).orElseThrow(()->new RuntimeException("Role is not found!"));
+                        roles.add(adminRole);
+                        break;
+                    case "seller":
+                        Role sellerRole = roleRepository.findByRoleName(AppRole.ROLE_SELLER).orElseThrow(()->new RuntimeException("Role is not found!"));
+                       roles.add(sellerRole);
+                        break;
+                    case "customer":
+                        Role customerRole = roleRepository.findByRoleName(AppRole.ROLE_CUSTOMER).orElseThrow(()->new RuntimeException("Role is not found!"));
+                        roles.add(customerRole);
+                        break;
+                    case "guest":
+                        Role guestRole = roleRepository.findByRoleName(AppRole.ROLE_GUEST).orElseThrow(()->new RuntimeException("Role is not found!"));
+                        roles.add(guestRole);
+                        break;
+                    default:
+                        Role userDefaultRole = roleRepository.findByRoleName(AppRole.ROLE_USER).orElseThrow(()->new RuntimeException("Role is not found!"));
+                        roles.add(userDefaultRole);
+                        break;
+
+                }
+            });
+        }
+
+        User newUser = new User(
+                signUpRequest.getUsername(),
+                encodedPassword,
+                signUpRequest.getFirstName(),
+                signUpRequest.getLastName(),
+                signUpRequest.getEmail(),
+                signUpRequest.getPhoneNumber(),
+                true
+        );
+        newUser.setRoles(roles);
+        userRepository.save(newUser);
+        return new ResponseEntity<Object>(new MessageResponse("User Registered successfully!"), HttpStatus.OK);
     }
 }

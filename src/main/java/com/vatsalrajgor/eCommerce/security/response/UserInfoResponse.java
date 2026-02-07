@@ -9,7 +9,7 @@ import java.util.List;
 @Getter
 @Setter
 @AllArgsConstructor
-public class UserInfoResponseDTO {
+public class UserInfoResponse {
     private Long userId;
     private String userName;
     private List<String> roles;
