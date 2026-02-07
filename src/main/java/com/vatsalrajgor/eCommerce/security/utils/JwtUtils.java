@@ -15,6 +15,8 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.security.Key;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
 @Slf4j
@@ -40,7 +42,9 @@ public class JwtUtils {
     public String generateJwtTokenFromUsername(UserDetails userDetails){
         String username = userDetails.getUsername();
         Date expirationInMs = new Date(new Date().getTime() + jwtExpirationInMs);
-        return Jwts.builder().subject(username).issuedAt(new Date()).expiration(expirationInMs).signWith(key()).compact();
+        Map<String, Object> assignedRole = new HashMap<>();
+        assignedRole.put("role", userDetails.getAuthorities());
+        return Jwts.builder().subject(username).claims(assignedRole).issuedAt(new Date()).expiration(expirationInMs).signWith(key()).compact();
     }
 
     public String getUserNameFromJwtToken(String token){
