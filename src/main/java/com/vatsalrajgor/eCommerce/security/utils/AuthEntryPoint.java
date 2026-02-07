@@ -15,8 +15,9 @@ public class AuthEntryPoint implements AuthenticationEntryPoint {
 
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException {
-        log.error("Unauthorized error: {}", authException.getMessage());
-        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Error: Unauthorized");
+        log.error("Bad Request error: {}", authException.getMessage());
+        String msg = "Bad Request error: " + authException.getMessage();
+        response.sendError(HttpServletResponse.SC_BAD_REQUEST,msg);
     }
 }
 
