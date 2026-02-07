@@ -3,6 +3,7 @@ package com.vatsalrajgor.eCommerce.security.utils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Bean;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
@@ -17,7 +18,7 @@ public class AuthEntryPoint implements AuthenticationEntryPoint {
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException {
         log.error("Bad Request error: {}", authException.getMessage());
         String msg = "Bad Request error: " + authException.getMessage();
-        response.sendError(HttpServletResponse.SC_BAD_REQUEST,msg);
+        response.sendError(HttpServletResponse.SC_UNAUTHORIZED,msg);
     }
 }
 

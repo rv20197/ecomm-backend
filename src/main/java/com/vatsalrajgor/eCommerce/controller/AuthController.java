@@ -128,6 +128,17 @@ public class AuthController {
         return new ResponseEntity<Object>(new MessageResponse("User Registered successfully!"), HttpStatus.OK);
     }
 
+    @PostMapping("/sign-out")
+    public ResponseEntity<?> signOutUser(){
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        authentication.setAuthenticated(false);
+        ResponseCookie cleanCookie = jwtUtils.getCleanCookie();
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.SET_COOKIE, cleanCookie.toString());
+        return new ResponseEntity<Object>(new MessageResponse("You have been logged out!"),headers, HttpStatus.OK);
+    }
+
+
     @GetMapping("/getCurrentUserName")
     public ResponseEntity<?> currentUserName(Authentication authentication){
         if(authentication!=null){
@@ -145,7 +156,7 @@ public class AuthController {
             UserInfoResponse userInfoResponse = new UserInfoResponse(userDetails.getUserId(), userDetails.getUsername(),roles);
             return new ResponseEntity<Object>(userInfoResponse, HttpStatus.OK);
         }else{
-            return new ResponseEntity<Object>("User is not authenticated!", HttpStatus.UNAUTHORIZED);
+            return new ResponseEntity<Object>(new MessageResponse("User is not authenticated!"), HttpStatus.UNAUTHORIZED);
         }
     }
 }
