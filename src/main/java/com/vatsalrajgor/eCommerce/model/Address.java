@@ -1,6 +1,5 @@
 package com.vatsalrajgor.eCommerce.model;
 
-import com.vatsalrajgor.eCommerce.validation.SafeHtml;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -21,42 +20,34 @@ public class Address {
 
     @NotBlank
     @Size(min = 5, message = "Street must be at least of 5 characters.")
-    @SafeHtml
     private String street;
 
     @NotBlank
     @Size(min = 1, message = "Street must be at least of 1 characters.")
-    @SafeHtml
     private String houseNumber;
 
     @NotBlank
     @Size(min = 1, message = "Floor must be at least of 1 character.")
-    @SafeHtml
     private String floor;
 
     @NotBlank
     @Size(min = 5, message = "Apartment must be at least of 5 characters.")
-    @SafeHtml
     private String apartment;
 
     @NotBlank
     @Size(min = 4, message = "Street must be at least of 5 characters.")
-    @SafeHtml
     private String city;
 
     @NotBlank
     @Size(min = 2, message = "Street must be at least of 2 characters.")
-    @SafeHtml
     private String state;
 
     @NotBlank
     @Size(min = 2, message = "Street must be at least of 2 characters.")
-    @SafeHtml
     private String country;
 
     @NotBlank
     @Size(min = 6, message = "Street must be at least of 6 characters.")
-    @SafeHtml
     private String pincode;
 
     @ManyToMany(mappedBy = "addresses")
