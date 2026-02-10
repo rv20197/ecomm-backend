@@ -1,5 +1,6 @@
 package com.vatsalrajgor.eCommerce.repository;
 
+import com.vatsalrajgor.eCommerce.model.Cart;
 import com.vatsalrajgor.eCommerce.model.CartItem;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

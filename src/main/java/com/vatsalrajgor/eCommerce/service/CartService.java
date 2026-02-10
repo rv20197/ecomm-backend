@@ -15,6 +15,7 @@ import com.vatsalrajgor.eCommerce.repository.ProductRepo;
 import com.vatsalrajgor.eCommerce.util.AuthUtil;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -44,6 +45,17 @@ public class CartService {
         cart.setUser(authUtil.getLoggedInUser());
 
         return cartRepository.save(cart);
+    }
+
+    @NonNull
+    private CartDTO getCartDTO(Cart cartItem) {
+        CartDTO cartDTO = cartMapper.toDTO(cartItem);
+        cartItem.getCartItems().forEach(c->{
+            c.getProduct().setQuantity(c.getQuantity());
+        });
+        List<ProductDTO> productDTOS = cartItem.getCartItems().stream().map(p-> productMapper.toDTO(p.getProduct())).toList();
+        cartDTO.setProducts(productDTOS);
+        return cartDTO;
     }
 
     @Transactional
@@ -97,5 +109,21 @@ public class CartService {
         cartDTO.setProducts(productDTOStream.toList());
 
         return cartDTO;
+    }
+
+    public List<CartDTO> getAllCarts() {
+        List<Cart> cart = cartRepository.findAll();
+        if (cart.isEmpty()) {
+            throw new APIException("Cart is empty.");
+        }
+        return cart.stream().map(this::getCartDTO).toList();
+    }
+
+    public CartDTO getCart(Long cartId, String emailId) {
+        Cart cart = cartRepository.findByEmailIdAndCartId(emailId,cartId);
+        if (cart == null) {
+            throw new ResourceNotFoundException("Cart", "cartId", cartId);
+        }
+        return getCartDTO(cart);
     }
 }
