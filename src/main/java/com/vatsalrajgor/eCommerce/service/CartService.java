@@ -48,13 +48,15 @@ public class CartService {
     }
 
     @NonNull
-    private CartDTO getCartDTO(Cart cartItem) {
-        CartDTO cartDTO = cartMapper.toDTO(cartItem);
-        cartItem.getCartItems().forEach(c->{
-            c.getProduct().setQuantity(c.getQuantity());
-        });
-        List<ProductDTO> productDTOS = cartItem.getCartItems().stream().map(p-> productMapper.toDTO(p.getProduct())).toList();
-        cartDTO.setProducts(productDTOS);
+    private CartDTO getCartDTO(Cart cart) {
+        CartDTO cartDTO = cartMapper.toDTO(cart);
+        List<ProductDTO> productDTOs = cart.getCartItems().stream()
+                .map(item -> {
+                    ProductDTO productDTO = productMapper.toDTO(item.getProduct());
+                    productDTO.setQuantity(item.getQuantity()); // Set cart quantity in DTO
+                    return productDTO;
+                }).toList();
+        cartDTO.setProducts(productDTOs);
         return cartDTO;
     }
 
@@ -95,20 +97,9 @@ public class CartService {
 
         cart.setTotalPrice(cart.getTotalPrice() + (product.getSpecialPrice() * quantity));
         cartRepository.save(cart);
+        productRepo.save(product);
 
-        CartDTO cartDTO = cartMapper.toDTO(cart);
-
-        List<CartItem> cartItems = cart.getCartItems();
-
-        Stream<ProductDTO> productDTOStream = cartItems.stream().map(item -> {
-            ProductDTO productDTO = productMapper.toDTO(item.getProduct());
-            productDTO.setQuantity(item.getQuantity());
-            return productDTO;
-        });
-
-        cartDTO.setProducts(productDTOStream.toList());
-
-        return cartDTO;
+        return getCartDTO(cart);
     }
 
     public List<CartDTO> getAllCarts() {
@@ -124,6 +115,59 @@ public class CartService {
         if (cart == null) {
             throw new ResourceNotFoundException("Cart", "cartId", cartId);
         }
+        return getCartDTO(cart);
+    }
+
+    @Transactional
+    public CartDTO updateProductQuantityInCart(Long productId, Integer quantity) {
+        String emailId = authUtil.loggedInEmail();
+        String userName = authUtil.getLoggedInUser().getUserName();
+        Cart userCart = cartRepository.findCartByEmail(emailId);
+        if (userCart == null) {
+            throw new ResourceNotFoundException("Cart", "User", userName);
+        }
+        Long cartId = userCart.getCartId();
+        Cart cart = cartRepository.findById(cartId).orElseThrow(() -> new ResourceNotFoundException("Cart", "cartId", cartId));
+        Product product = productRepo.findById(productId).orElseThrow(() -> new ResourceNotFoundException("Product", "productId", productId));
+
+        if (quantity > 0 && product.getQuantity() == 0) {
+            throw new APIException("Product " + product.getProductName() + " is out of stock.");
+        }
+
+        if (quantity > 0 && product.getQuantity() < quantity) {
+            throw new APIException("Please, make an order of the " + product.getProductName()
+                    + " less than or equal to quantity " + product.getQuantity() + ".");
+        }
+
+        CartItem cartItem = cartItemRepository.findCartItemByProductIdAndCartId(cartId, productId);
+        if (cartItem == null) {
+            String msg = "Product " + product.getProductName() + " is not available in cart.";
+            throw new APIException(msg);
+        }
+
+        cartItem.setProductPrice(product.getSpecialPrice());
+        cartItem.setQuantity(cartItem.getQuantity() + quantity);
+        cartItem.setDiscount(product.getDiscount());
+        cart.setTotalPrice(cart.getTotalPrice() + (cartItem.getProductPrice() * quantity));
+
+        if (cartItem.getQuantity() <= 0) {
+            cartItemRepository.deleteById(cartItem.getCartItemId());
+            cart.getCartItems().remove(cartItem);
+            product.getCartItems().remove(cartItem);
+        } else {
+            cartItemRepository.save(cartItem);
+        }
+
+        if (cart.getCartItems().isEmpty()) {
+            cartRepository.delete(cart);
+            cart.getUser().setCart(null);
+        } else {
+            cartRepository.save(cart);
+        }
+
+        product.setQuantity(product.getQuantity() - quantity);
+        productRepo.save(product);
+
         return getCartDTO(cart);
     }
 }

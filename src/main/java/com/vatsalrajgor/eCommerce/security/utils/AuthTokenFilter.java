@@ -28,8 +28,8 @@ public class AuthTokenFilter extends OncePerRequestFilter {
         log.debug("Auth token filter invoked for URI: {}", request.getRequestURI());
         try{
             String jwt = jwtUtils.getJwtFromCookie(request);
-            log.debug("JWT token: {}", jwt);
-            if(jwt != null && jwtUtils.validateJwtToken(jwt)){
+            log.debug("Is Jwt Present: {}", !jwt.isBlank());
+            if(jwtUtils.validateJwtToken(jwt)){
                 String username = jwtUtils.getUserNameFromJwtToken(jwt);
                 log.debug("Authenticated user: {}", username);
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
